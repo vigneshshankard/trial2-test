@@ -36,7 +36,13 @@ describe('AI Study Planner Tests', () => {
     const response = await request(app)
       .post('/api/study-planner/plans')
       .set('Authorization', `Bearer ${token}`) // Include the token in the Authorization header
-      .send({ userId: new mongoose.Types.ObjectId(), targetExamDate: '2023-12-31', preferredSubjects: ['Math', 'History'] });
+      .send({
+        subject: 'Math',
+        duration: 2,
+        userId: new mongoose.Types.ObjectId(),
+        targetExamDate: '2023-12-31',
+        preferredSubjects: ['Math', 'History']
+      });
     expect(response.status).toBe(201);
   }, 30000);
 

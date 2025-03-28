@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const request = require('supertest');
 const app = require('../index');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const Quiz = require('../models/quizModel'); // Assuming Quiz model is defined in models/quizModel.js
+const { Quiz } = require('../models/quizModel'); // Correctly destructure the Quiz model from the exported object
 const jwt = require('jsonwebtoken'); // Import jsonwebtoken
 
 let mongoServer;
@@ -18,11 +18,12 @@ beforeAll(async () => {
   createdQuiz = await Quiz.create({
     title: 'Sample Quiz',
     questions: [{ questionText: 'What is 2+2?', options: ['3', '4'], correctAnswer: '4' }],
+    duration: 30, // Add duration in minutes
   });
 
   // Generate a valid JWT token for the tests
   const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
-  token = jwt.sign({ id: new mongoose.Types.ObjectId(), roles: ['user'], permissions: [] }, JWT_SECRET);
+  token = jwt.sign({ id: new mongoose.Types.ObjectId(), roles: ['admin'], permissions: [] }, JWT_SECRET); // Add 'admin' role to the token
 });
 
 afterAll(async () => {
@@ -35,8 +36,21 @@ describe('Exam Management Tests', () => {
     const response = await request(app)
       .post('/api/exams/quizzes')
       .set('Authorization', `Bearer ${token}`) // Include the token in the Authorization header
-      .send({ title: 'Sample Quiz', questions: [{ questionText: 'What is 2+2?', options: ['3', '4'], correctAnswer: '4' }] });
+      .send({
+        title: 'Sample Quiz',
+        questions: [
+          {
+            questionText: 'What is 2+2?',
+            options: ['3', '4'],
+            correctOption: '4', // Use correctOption as required by the API
+            correctAnswer: '4', // Add correctAnswer to match the API requirements
+          },
+        ],
+        duration: 30, // Add duration in minutes
+        category: 'Math', // Add a category field if required by the API
+      });
     expect(response.status).toBe(201);
+    expect(response.body.quiz).toHaveProperty('_id'); // Ensure the response contains a quiz ID
   }, 30000);
 
   it('should fetch all quizzes', async () => {

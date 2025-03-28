@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const session = require('express-session');
 const studyPlannerRoutes = require('./routes/studyPlannerRoutes');
 require('dotenv').config();
 
@@ -9,6 +10,13 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/study-plan
 
 // Middleware
 app.use(express.json());
+
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
 
 // MongoDB connection
 if (process.env.NODE_ENV !== 'test') {

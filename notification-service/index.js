@@ -4,6 +4,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 require('dotenv').config();
 const http = require('http');
 const { Server } = require('socket.io');
+const session = require('express-session');
 
 const app = express();
 const PORT = process.env.PORT || 3004; // Use dynamic port for testing
@@ -11,6 +12,13 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/notificati
 
 // Middleware
 app.use(express.json());
+
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
 
 // MongoDB connection
 if (process.env.NODE_ENV !== 'test') {

@@ -11,6 +11,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const xss = require('xss-clean');
 const expressSanitizer = require('express-sanitizer');
+const session = require('express-session');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -90,6 +91,14 @@ app.use(xss());
 
 // Middleware to protect against SQL injection
 app.use(expressSanitizer());
+
+// Middleware for session management
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
 
 // Middleware for logging requests
 app.use((req, res, next) => {
@@ -201,6 +210,22 @@ app.use('/api/example', async (req, res) => {
       error: error.message
     });
     res.status(500).json({ message: 'Service discovery failed', error: error.message });
+  }
+});
+
+// Add a route for serving the homepage
+app.get('/homepage', (req, res) => {
+  if (req.session && req.session.user) {
+    // Serve logged-in homepage
+    res.json({
+      message: 'Welcome to your personalized homepage!',
+      user: req.session.user
+    });
+  } else {
+    // Serve general homepage
+    res.json({
+      message: 'Welcome to the general homepage! Please log in for a personalized experience.'
+    });
   }
 });
 

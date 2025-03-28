@@ -42,7 +42,12 @@ describe('Social Interaction Tests', () => {
     const response = await request(app)
       .post('/api/social/friend-requests')
       .set('Authorization', `Bearer ${token}`) // Include the token in the Authorization header
-      .send({ senderId: new mongoose.Types.ObjectId(), receiverId: new mongoose.Types.ObjectId() });
+      .send({
+        senderId: new mongoose.Types.ObjectId(), // Add senderId as required by the API
+        receiverId: new mongoose.Types.ObjectId(), // Ensure receiverId is correctly passed
+        status: 'pending', // Explicitly include the status field
+      });
     expect(response.status).toBe(201);
+    expect(response.body.request).toHaveProperty('_id'); // Ensure the response contains a request ID
   }, 30000);
 });

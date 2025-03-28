@@ -34,3 +34,13 @@ exports.getNotifications = async (req, res, next) => {
         next(error); // Pass error to global error handler
     }
 };
+
+// Get priority notifications for Subscribers
+exports.getPriorityNotifications = async (req, res, next) => {
+    try {
+        const notifications = await Notification.find({ type: 'priority' });
+        res.status(200).json(notifications);
+    } catch (error) {
+        next(error); // Pass error to global error handler
+    }
+};
