@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const examRoutes = require('./routes/examRoutes');
+const healthcheck = require('express-healthcheck');
+const createCircuitBreaker = require('../shared/circuitBreaker');
 require('dotenv').config();
 
 const app = express();
@@ -17,6 +19,68 @@ app.use(session({
   saveUninitialized: true,
   cookie: { secure: false } // Set to true if using HTTPS
 }));
+
+// Health check endpoint with detailed service status
+app.use('/health', healthcheck({
+  healthy: () => ({
+    uptime: process.uptime(),
+    message: 'Exam Management Service is healthy',
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    memoryUsage: process.memoryUsage(),
+    activeExams: req.session.activeExams || 0
+  })
+}));
+
+// Circuit breaker for database operations
+const withCircuitBreaker = (operation) => {
+  const breaker = createCircuitBreaker(operation, {
+    timeout: 5000,
+    errorThresholdPercentage: 30,
+    resetTimeout: 10000
+  });
+  return breaker;
+};
+
+// Database health check middleware
+app.use(async (req, res, next) => {
+  if (req.path === '/health') return next();
+
+  const checkDb = async () => {
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database connection is not ready');
+    }
+  };
+
+  const dbBreaker = withCircuitBreaker(checkDb);
+
+  try {
+    await dbBreaker.fire();
+    next();
+  } catch (error) {
+    res.status(503).json({ 
+      message: 'Exam service temporarily unavailable',
+      error: error.message 
+    });
+  }
+});
+
+// Circuit breaker for exam submission
+const examSubmissionBreaker = withCircuitBreaker(async (examData) => {
+  // Implement exam submission logic with retry mechanism
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      return await saveExamSubmission(examData);
+    } catch (error) {
+      retries--;
+      if (retries === 0) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+});
+
+// Attach circuit breaker to app for use in routes
+app.set('examSubmissionBreaker', examSubmissionBreaker);
 
 // MongoDB connection
 if (process.env.NODE_ENV !== 'test') {

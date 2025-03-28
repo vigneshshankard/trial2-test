@@ -85,7 +85,7 @@ exports.startQuiz = async (req, res, next) => {
     }
 };
 
-// Submit quiz answers
+// Submit quiz answers with circuit breaker
 exports.submitQuiz = async (req, res, next) => {
     try {
         const { answers, timeTaken } = req.body;
@@ -101,7 +101,20 @@ exports.submitQuiz = async (req, res, next) => {
             }
         });
 
-        // Restrict analytics for Visitors
+        // Prepare submission data
+        const submissionData = {
+            userId: req.user.id,
+            quizId: quiz._id,
+            timeTaken,
+            correctAnswers,
+            totalQuestions: quiz.questions.length,
+        };
+
+        // Use circuit breaker for submission
+        const examSubmissionBreaker = req.app.get('examSubmissionBreaker');
+        const analytics = await examSubmissionBreaker.fire(submissionData);
+
+        // Handle different user roles
         if (req.user.role === 'visitor') {
             return res.status(200).json({
                 message: 'Sign up to view detailed results',
@@ -110,19 +123,17 @@ exports.submitQuiz = async (req, res, next) => {
             });
         }
 
-        const analytics = await Analytics.create({
-            userId: req.user.id,
-            quizId: quiz._id,
-            timeTaken,
-            correctAnswers,
-            totalQuestions: quiz.questions.length,
-        });
-
         res.status(200).json({
             message: 'Quiz submitted successfully',
             analytics,
         });
     } catch (error) {
+        if (error.type === 'circuit-breaker') {
+            return res.status(503).json({
+                message: 'Service is temporarily unavailable. Please try again later.',
+                error: error.message
+            });
+        }
         next(error);
     }
 };

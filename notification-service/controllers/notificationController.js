@@ -2,8 +2,9 @@ const Notification = require('../models/notificationModel');
 const request = require('supertest');
 const app = require('../index');
 const { validationResult } = require('express-validator');
+const { createCircuitBreaker } = require('circuit-breaker');
 
-// Send a notification
+// Send a notification with circuit breaker
 exports.sendNotification = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -12,15 +13,29 @@ exports.sendNotification = async (req, res, next) => {
 
     try {
         const { userId, type, message } = req.body;
-        const newNotification = new Notification({ userId, type, message });
-        await newNotification.save();
-        res.status(201).json({ message: 'Notification sent successfully', notification: newNotification });
+        const notification = { userId, type, message };
+
+        // Use circuit breaker for sending notification
+        const notificationDispatcher = req.app.get('notificationDispatcher');
+        await notificationDispatcher.fire(notification);
+
+        const savedNotification = await new Notification(notification).save();
+        res.status(201).json({ 
+            message: 'Notification sent successfully',
+            notification: savedNotification 
+        });
     } catch (error) {
-        next(error); // Pass error to global error handler
+        if (error.type === 'circuit-breaker') {
+            return res.status(503).json({
+                message: 'Notification service temporarily unavailable',
+                error: error.message
+            });
+        }
+        next(error);
     }
 };
 
-// Get notifications for a user
+// Get notifications for a user with circuit breaker
 exports.getNotifications = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -28,10 +43,26 @@ exports.getNotifications = async (req, res, next) => {
     }
 
     try {
-        const notifications = await Notification.find({ userId: req.params.userId });
+        const fetchNotifications = async () => {
+            return await Notification.find({ userId: req.params.userId });
+        };
+
+        const notificationBreaker = createCircuitBreaker(fetchNotifications, {
+            timeout: 2000,
+            errorThresholdPercentage: 20,
+            resetTimeout: 5000
+        });
+
+        const notifications = await notificationBreaker.fire();
         res.status(200).json(notifications);
     } catch (error) {
-        next(error); // Pass error to global error handler
+        if (error.type === 'circuit-breaker') {
+            return res.status(503).json({
+                message: 'Unable to fetch notifications at this time',
+                error: error.message
+            });
+        }
+        next(error);
     }
 };
 

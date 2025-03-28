@@ -12,6 +12,8 @@ const { Server } = require('socket.io');
 const xss = require('xss-clean');
 const expressSanitizer = require('express-sanitizer');
 const session = require('express-session');
+const createCircuitBreaker = require('../shared/circuitBreaker');
+const healthcheck = require('express-healthcheck');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -163,28 +165,64 @@ const routesConfig = [
   { path: '/api/study-planner', serviceName: 'ai-study-planner' },
 ];
 
-// Middleware for forwarding requests dynamically
+// Health check endpoint
+app.use('/health', healthcheck({
+  healthy: () => {
+    return { uptime: process.uptime(), message: 'API Gateway is healthy' };
+  }
+}));
+
+// Enhance service discovery with health checks
+const checkServiceHealth = async (serviceAddress) => {
+  try {
+    const response = await axios.get(`http://${serviceAddress}/health`);
+    return response.data.healthy;
+  } catch (error) {
+    logger.error({
+      message: `Health check failed for service at ${serviceAddress}`,
+      error: error.message
+    });
+    return false;
+  }
+};
+
+// Middleware for forwarding requests dynamically with circuit breaker
 routesConfig.forEach(({ path, serviceName }) => {
   app.use(path, async (req, res) => {
     try {
       const serviceAddress = await discoverService(serviceName);
-      const url = `http://${serviceAddress}${req.originalUrl}`;
-      axios({ method: req.method, url, data: req.body })
-        .then(response => res.status(response.status).json(response.data))
-        .catch(error => {
-          logger.error({
-            message: `Error forwarding request to ${serviceName}`,
-            error: error.message,
-            stack: error.stack
-          });
-          res.status(error.response?.status || 500).json(error.response?.data || { message: 'Error forwarding request' });
+      
+      // Check service health before proceeding
+      const isHealthy = await checkServiceHealth(serviceAddress);
+      if (!isHealthy) {
+        throw new Error(`Service ${serviceName} is unhealthy`);
+      }
+
+      const makeRequest = async () => {
+        const url = `http://${serviceAddress}${req.originalUrl}`;
+        const response = await axios({
+          method: req.method,
+          url,
+          data: req.body,
+          headers: req.headers
         });
+        return response.data;
+      };
+
+      // Create circuit breaker for the service
+      const breaker = createCircuitBreaker(makeRequest, {
+        fallback: () => ({ error: `${serviceName} is currently unavailable` })
+      });
+
+      const result = await breaker.fire();
+      res.status(200).json(result);
     } catch (error) {
       logger.error({
-        message: `Service discovery failed for ${serviceName}`,
-        error: error.message
+        message: `Error processing request for ${serviceName}`,
+        error: error.message,
+        stack: error.stack
       });
-      res.status(500).json({ message: `Service discovery failed for ${serviceName}`, error: error.message });
+      res.status(503).json({ message: `Service ${serviceName} is unavailable`, error: error.message });
     }
   });
 });

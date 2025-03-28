@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 const StudyPlan = require('../models/studyPlanModel');
 
-// Generate a new study plan
+// Generate a new study plan with circuit breaker
 exports.generatePlan = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -10,7 +10,7 @@ exports.generatePlan = async (req, res, next) => {
     try {
         const planData = {
             ...req.body,
-            userId: req.user.id, // Associate plan with the user
+            userId: req.user.id,
         };
 
         // Add advanced features for Subscribers
@@ -18,24 +18,52 @@ exports.generatePlan = async (req, res, next) => {
             planData.advancedFeatures = true;
         }
 
-        const newPlan = await StudyPlan.create(planData);
-        res.status(201).json({ message: 'Study plan generated successfully', plan: newPlan });
+        // Use circuit breaker for AI plan generation
+        const aiPlanGenerator = req.app.get('aiPlanGenerator');
+        const generatedPlan = await aiPlanGenerator.fire(planData);
+
+        const newPlan = await StudyPlan.create({
+            ...planData,
+            ...generatedPlan
+        });
+
+        res.status(201).json({ 
+            message: 'Study plan generated successfully',
+            plan: newPlan 
+        });
     } catch (error) {
+        if (error.type === 'circuit-breaker') {
+            return res.status(503).json({
+                message: 'AI Study Planner temporarily unavailable',
+                error: error.message
+            });
+        }
         next(error);
     }
 };
 
-// Retrieve a user's study plan
+// Retrieve a user's study plan with circuit breaker
 exports.getPlan = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     try {
-        const plan = await StudyPlan.findOne({ userId: req.params.userId });
-        if (!plan) {
-            return res.status(404).json({ message: 'Study plan not found' });
-        }
+        const fetchPlan = async () => {
+            const plan = await StudyPlan.findOne({ userId: req.params.userId });
+            if (!plan) {
+                throw new Error('Study plan not found');
+            }
+            return plan;
+        };
+
+        const planBreaker = createCircuitBreaker(fetchPlan, {
+            timeout: 3000,
+            errorThresholdPercentage: 20,
+            resetTimeout: 5000
+        });
+
+        const plan = await planBreaker.fire();
 
         // Restrict advanced details for non-Subscribers
         if (req.user.role !== 'subscriber') {
@@ -44,28 +72,59 @@ exports.getPlan = async (req, res, next) => {
 
         res.status(200).json(plan);
     } catch (error) {
+        if (error.type === 'circuit-breaker') {
+            return res.status(503).json({
+                message: 'Unable to fetch study plan at this time',
+                error: error.message
+            });
+        }
+        if (error.message === 'Study plan not found') {
+            return res.status(404).json({ message: error.message });
+        }
         next(error);
     }
 };
 
-// Update a study plan
+// Update a study plan with circuit breaker
 exports.updatePlan = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     try {
-        const updatedPlan = await StudyPlan.findOneAndUpdate(
-            { userId: req.params.userId },
-            req.body,
-            { new: true }
-        );
-        if (!updatedPlan) {
-            return res.status(404).json({ message: 'Study plan not found' });
-        }
+        const updatePlanOperation = async () => {
+            const updatedPlan = await StudyPlan.findOneAndUpdate(
+                { userId: req.params.userId },
+                req.body,
+                { new: true }
+            );
+            if (!updatedPlan) {
+                throw new Error('Study plan not found');
+            }
+            return updatedPlan;
+        };
 
-        res.status(200).json({ message: 'Study plan updated successfully', plan: updatedPlan });
+        const updateBreaker = createCircuitBreaker(updatePlanOperation, {
+            timeout: 3000,
+            errorThresholdPercentage: 20,
+            resetTimeout: 5000
+        });
+
+        const updatedPlan = await updateBreaker.fire();
+        res.status(200).json({ 
+            message: 'Study plan updated successfully',
+            plan: updatedPlan 
+        });
     } catch (error) {
+        if (error.type === 'circuit-breaker') {
+            return res.status(503).json({
+                message: 'Unable to update study plan at this time',
+                error: error.message
+            });
+        }
+        if (error.message === 'Study plan not found') {
+            return res.status(404).json({ message: error.message });
+        }
         next(error);
     }
 };

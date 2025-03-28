@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
+const healthcheck = require('express-healthcheck');
+const createCircuitBreaker = require('../shared/circuitBreaker');
 require('dotenv').config();
 
 const app = express();
@@ -22,6 +24,45 @@ app.use('/api/users', userRoutes);
 
 app.get('/', (req, res) => {
     res.send('User Management Service is running');
+});
+
+// Health check endpoint
+app.use('/health', healthcheck({
+  healthy: () => ({ 
+    uptime: process.uptime(),
+    message: 'User Management Service is healthy',
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  })
+}));
+
+// Apply circuit breaker to database operations
+const withCircuitBreaker = (operation) => {
+  const breaker = createCircuitBreaker(operation, {
+    timeout: 5000,
+    errorThresholdPercentage: 30,
+    resetTimeout: 10000
+  });
+  return breaker;
+};
+
+// Middleware to handle database circuit breaking
+app.use(async (req, res, next) => {
+  if (req.path === '/health') return next();
+  
+  const checkDb = async () => {
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database connection is not ready');
+    }
+  };
+  
+  const dbBreaker = withCircuitBreaker(checkDb);
+  
+  try {
+    await dbBreaker.fire();
+    next();
+  } catch (error) {
+    res.status(503).json({ message: 'Service temporarily unavailable', error: error.message });
+  }
 });
 
 // Global error handling middleware

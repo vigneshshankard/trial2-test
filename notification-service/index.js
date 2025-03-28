@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const notificationRoutes = require('./routes/notificationRoutes');
+const healthcheck = require('express-healthcheck');
+const createCircuitBreaker = require('../shared/circuitBreaker');
 require('dotenv').config();
 const http = require('http');
 const { Server } = require('socket.io');
@@ -19,6 +21,81 @@ app.use(session({
   saveUninitialized: true,
   cookie: { secure: false } // Set to true if using HTTPS
 }));
+
+// Health check endpoint with detailed status
+app.use('/health', healthcheck({
+  healthy: () => ({
+    uptime: process.uptime(),
+    message: 'Notification Service is healthy',
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    socketConnections: io ? io.engine.clientsCount : 0,
+    memoryUsage: process.memoryUsage()
+  })
+}));
+
+// Circuit breaker for notification dispatch
+const withCircuitBreaker = (operation) => {
+  const breaker = createCircuitBreaker(operation, {
+    timeout: 3000,
+    errorThresholdPercentage: 25,
+    resetTimeout: 10000
+  });
+  return breaker;
+};
+
+// Create notification dispatcher with circuit breaker
+const createNotificationDispatcher = () => {
+  const dispatcher = withCircuitBreaker(async (notification) => {
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        switch (notification.type) {
+          case 'email':
+            return await sendEmailNotification(notification);
+          case 'push':
+            return await sendPushNotification(notification);
+          case 'in-app':
+            return await sendInAppNotification(notification);
+          default:
+            throw new Error('Invalid notification type');
+        }
+      } catch (error) {
+        retries--;
+        if (retries === 0) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+  });
+
+  return dispatcher;
+};
+
+// Attach notification dispatcher to app
+const notificationDispatcher = createNotificationDispatcher();
+app.set('notificationDispatcher', notificationDispatcher);
+
+// Database health check middleware
+app.use(async (req, res, next) => {
+  if (req.path === '/health') return next();
+
+  const checkDb = async () => {
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database connection is not ready');
+    }
+  };
+
+  const dbBreaker = withCircuitBreaker(checkDb);
+
+  try {
+    await dbBreaker.fire();
+    next();
+  } catch (error) {
+    res.status(503).json({
+      message: 'Notification service temporarily unavailable',
+      error: error.message
+    });
+  }
+});
 
 // MongoDB connection
 if (process.env.NODE_ENV !== 'test') {
