@@ -1,18 +1,28 @@
+const { validationResult } = require('express-validator');
 const StudyPlan = require('../models/studyPlanModel');
 
 // Generate a new study plan
-exports.generatePlan = async (req, res) => {
+exports.generatePlan = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const newPlan = await StudyPlan.create(req.body);
         res.status(201).json({ message: 'Study plan generated successfully', plan: newPlan });
     } catch (error) {
-        console.error('Error in generatePlan:', error);
-        res.status(500).json({ message: 'Error generating study plan', error: error.message });
+        next(error); // Pass error to global error handler
     }
 };
 
 // Retrieve a user's study plan
-exports.getPlan = async (req, res) => {
+exports.getPlan = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const plan = await StudyPlan.findOne({ userId: req.params.userId });
         if (!plan) {
@@ -20,13 +30,17 @@ exports.getPlan = async (req, res) => {
         }
         res.status(200).json(plan);
     } catch (error) {
-        console.error('Error in getPlan:', error);
-        res.status(500).json({ message: 'Error retrieving study plan', error: error.message });
+        next(error); // Pass error to global error handler
     }
 };
 
 // Update a study plan
-exports.updatePlan = async (req, res) => {
+exports.updatePlan = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const updatedPlan = await StudyPlan.findOneAndUpdate(
             { userId: req.params.userId },
@@ -38,7 +52,6 @@ exports.updatePlan = async (req, res) => {
         }
         res.status(200).json({ message: 'Study plan updated successfully', plan: updatedPlan });
     } catch (error) {
-        console.error('Error in updatePlan:', error);
-        res.status(500).json({ message: 'Error updating study plan', error: error.message });
+        next(error); // Pass error to global error handler
     }
 };

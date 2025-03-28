@@ -4,14 +4,16 @@ const app = require('../index');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const User = require('../models/userModel'); // Corrected import path for User model
 const bcrypt = require('bcrypt'); // Import bcrypt for password hashing
+const jwt = require('jsonwebtoken'); // Import jsonwebtoken
 
 let mongoServer;
 let createdUser;
+let token; // Declare a token variable
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
-  await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+  await mongoose.connect(uri, {}); // Removed deprecated options
 });
 
 beforeEach(async () => {
@@ -25,6 +27,10 @@ beforeEach(async () => {
     email: 'test@example.com',
     password: hashedPassword,
   });
+
+  // Generate a valid JWT token for the created user
+  const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
+  token = jwt.sign({ id: createdUser._id, roles: ['user'], permissions: [] }, JWT_SECRET);
 
   // Mock req.user for profile test with a valid ObjectId
   app.use('/api/users/profile', (req, res, next) => {
@@ -54,13 +60,9 @@ describe('User Management Tests', () => {
   }, 20000);
 
   it('should fetch user profile', async () => {
-    // Explicitly set req.user.id to the correct ObjectId format
-    app.use((req, res, next) => {
-      req.user = { id: createdUser._id }; // Use ObjectId directly
-      next();
-    });
-
-    const response = await request(app).get('/api/users/profile');
+    const response = await request(app)
+      .get('/api/users/profile')
+      .set('Authorization', `Bearer ${token}`); // Include the token in the Authorization header
     expect(response.status).toBe(200);
   }, 20000);
 });

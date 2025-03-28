@@ -1,9 +1,16 @@
 const User = require('../models/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const { validationResult } = require('express-validator');
 
 // Register a new user
 exports.register = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const { username, email, password } = req.body;
 
@@ -28,6 +35,11 @@ exports.register = async (req, res) => {
 
 // Login a user
 exports.login = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const { email, password } = req.body;
 
@@ -56,12 +68,19 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
     try {
         console.log('Fetching profile for user ID:', req.user.id); // Debug log
-        const user = await User.findById(req.user.id).select('-password');
+
+        // Validate if the ID is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+            console.log('Invalid user ID:', req.user.id); // Debug log
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        const userId = new mongoose.Types.ObjectId(req.user.id); // Correct instantiation with 'new'
+        const user = await User.findById(userId).select('-password');
         if (!user) {
             console.log('User not found for ID:', req.user.id); // Debug log
             return res.status(404).json({ message: 'User not found' });
         }
-
         res.status(200).json(user);
     } catch (error) {
         console.error('Error in getProfile:', error); // Debug log

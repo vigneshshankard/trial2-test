@@ -9,6 +9,8 @@ const rateLimit = require('express-rate-limit');
 const winston = require('winston');
 const http = require('http');
 const { Server } = require('socket.io');
+const xss = require('xss-clean');
+const expressSanitizer = require('express-sanitizer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -75,6 +77,20 @@ const discoverService = (serviceName) => {
 // Middleware for parsing JSON
 app.use(express.json());
 
+// Enforce HTTPS
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] !== 'https' && process.env.NODE_ENV === 'production') {
+    return res.redirect(`https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+
+// Middleware to sanitize inputs and protect against XSS
+app.use(xss());
+
+// Middleware to protect against SQL injection
+app.use(expressSanitizer());
+
 // Middleware for logging requests
 app.use((req, res, next) => {
   logger.info({
@@ -98,7 +114,7 @@ app.use(limiter);
 // Use environment variable for JWT secret
 const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
 
-// Middleware for JWT authentication
+// Enhance JWT middleware for centralized authentication and RBAC
 app.use((req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) {
@@ -114,7 +130,16 @@ app.use((req, res, next) => {
       });
       return res.status(401).json({ message: 'Unauthorized: Invalid token' });
     }
-    req.user = decoded;
+
+    // Extract roles and permissions from the token
+    const { roles, permissions } = decoded;
+    req.user = { id: decoded.id, roles, permissions };
+
+    // Example RBAC enforcement (can be customized per route)
+    if (req.path.startsWith('/admin') && !roles.includes('admin')) {
+      return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
+    }
+
     next();
   });
 });

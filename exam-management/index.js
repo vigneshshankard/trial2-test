@@ -1,19 +1,20 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const examRoutes = require('./routes/examRoutes');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 0; // Use dynamic port for testing
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/exam';
 
 // Middleware
 app.use(express.json());
 
 // MongoDB connection
 if (process.env.NODE_ENV !== 'test') {
-    mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/test', {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    }).then(() => console.log('MongoDB connected')).catch(err => console.error('MongoDB connection error:', err));
+    mongoose.connect(MONGO_URI)
+        .then(() => console.log('MongoDB connected'))
+        .catch(err => console.error('MongoDB connection error:', err));
 }
 
 // Routes
@@ -21,6 +22,18 @@ app.use('/api/exams', examRoutes);
 
 app.get('/', (req, res) => {
     res.send('Exam Management Service is running');
+});
+
+// Global error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err.message, '\nStack:', err.stack); // Log error details
+
+    // Standardized error response
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Internal Server Error',
+        error: process.env.NODE_ENV === 'development' ? err.stack : undefined, // Include stack trace in development
+    });
 });
 
 // Start the server
