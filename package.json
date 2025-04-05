@@ -13,7 +13,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^26.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.13.0",
+    "mongoose": "^6.8.0",
     "node-fetch": "^3.3.2",
     "opossum": "^8.4.0",
     "react-router-dom": "^7.4.0"

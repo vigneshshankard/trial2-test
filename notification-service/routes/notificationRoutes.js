@@ -68,4 +68,11 @@ router.get(
   notificationController.getPriorityNotifications
 );
 
+/**
+ * @route PUT /preferences
+ * @desc Update notification preferences for users
+ * @access User
+ */
+router.put('/preferences', authMiddleware, notificationController.updateNotificationPreferences);
+
 module.exports = router;

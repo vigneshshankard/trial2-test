@@ -9,6 +9,11 @@ const postSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
+        index: true, // Added index for faster queries
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false, // Added field for soft delete
     },
 }, { timestamps: true });
 

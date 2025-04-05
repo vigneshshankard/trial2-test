@@ -25,6 +25,10 @@ const chatSchema = new mongoose.Schema({
             },
         },
     ],
+    isGroupChat: {
+        type: Boolean,
+        default: false,
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Chat', chatSchema);

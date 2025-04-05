@@ -23,7 +23,14 @@ router.post(
   userController.login
 );
 
+router.post('/auth/reset-password', userController.resetPassword);
+router.get('/auth/verify-email/:token', userController.verifyEmail);
+
 // Protected routes
 router.get('/profile', authMiddleware, userController.getProfile);
+router.get('/dashboard', authMiddleware, userController.getDashboard);
+router.get('/users/:id', authMiddleware, userController.getUserById);
+router.put('/users/:id/role', authMiddleware, userController.updateUserRole);
+router.delete('/users/:id', authMiddleware, userController.deleteUser);
 
 module.exports = router;

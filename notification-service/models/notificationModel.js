@@ -5,6 +5,7 @@ const notificationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
+        index: true, // Added index for faster queries
     },
     type: {
         type: String,
@@ -18,6 +19,11 @@ const notificationSchema = new mongoose.Schema({
     isRead: {
         type: Boolean,
         default: false,
+    },
+    priority: {
+        type: String,
+        enum: ['low', 'medium', 'high'],
+        default: 'medium', // Added priority field for notifications
     },
 }, { timestamps: true });
 

@@ -101,4 +101,12 @@ router.post(
  */
 router.get('/analytics', authMiddleware, checkUserRole(['subscriber']), examController.getAnalytics);
 
+/**
+ * @route POST /exams/:id/pause
+ * @desc Pause an ongoing test
+ * @access User, Subscriber
+ * @param {string} id - Exam ID (MongoDB ObjectId)
+ */
+router.post('/exams/:id/pause', authMiddleware, examController.pauseTest);
+
 module.exports = router;

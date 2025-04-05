@@ -152,3 +152,90 @@ exports.getAnalytics = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.startExam = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const exam = await Exam.findById(id);
+
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+
+    const randomizedQuestions = exam.questions.sort(() => Math.random() - 0.5);
+    const session = { userId: req.user.id, examId: id, startTime: new Date() };
+
+    // Store session in Redis (placeholder)
+    await redisClient.set(`exam:${req.user.id}:${id}`, JSON.stringify(session));
+
+    res.status(200).json({ exam: { ...exam.toObject(), questions: randomizedQuestions } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.submitExam = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const sessionKey = `exam:${req.user.id}:${id}`;
+    const session = await redisClient.get(sessionKey);
+
+    if (!session) {
+      return res.status(400).json({ message: 'Exam session not found' });
+    }
+
+    const { answers } = req.body;
+    const exam = await Exam.findById(id);
+    const score = calculateScore(exam.questions, answers);
+
+    // Save results (placeholder)
+    await UserTestAttempts.create({ userId: req.user.id, examId: id, score });
+
+    // Delete session
+    await redisClient.del(sessionKey);
+
+    res.status(200).json({ message: 'Exam submitted successfully', score });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.pauseTest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const sessionKey = `exam:${req.user.id}:${id}`;
+    const session = await redisClient.get(sessionKey);
+
+    if (!session) {
+      return res.status(400).json({ message: 'Exam session not found' });
+    }
+
+    const pausedSession = { ...JSON.parse(session), pausedAt: new Date() };
+    await redisClient.set(sessionKey, JSON.stringify(pausedSession));
+
+    res.status(200).json({ message: 'Exam paused successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.autoSubmitStaleExams = async () => {
+  try {
+    const staleSessions = await redisClient.keys('exam:*');
+
+    for (const sessionKey of staleSessions) {
+      const session = JSON.parse(await redisClient.get(sessionKey));
+      const elapsedTime = Date.now() - new Date(session.startTime).getTime();
+
+      if (elapsedTime > 24 * 60 * 60 * 1000) { // 24 hours
+        const exam = await Exam.findById(session.examId);
+        const score = calculateScore(exam.questions, session.answers || []);
+
+        await UserTestAttempts.create({ userId: session.userId, examId: session.examId, score });
+        await redisClient.del(sessionKey);
+      }
+    }
+  } catch (error) {
+    console.error('Error auto-submitting stale exams:', error);
+  }
+};

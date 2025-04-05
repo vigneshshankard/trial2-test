@@ -1,0 +1,1 @@
+router.get('/:id/quiz', authMiddleware, currentAffairsController.getQuizForCurrentAffair);

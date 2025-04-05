@@ -5,6 +5,8 @@ const Chat = require('../models/chatModel');
 const Group = require('../models/groupModel');
 const User = require('../../user-management/models/userModel');
 const { validationResult } = require('express-validator');
+const Friend = require('../models/friendModel');
+const amqp = require('amqplib');
 
 // Fetch all posts
 exports.getPosts = async (req, res, next) => {
@@ -29,67 +31,80 @@ exports.createPost = async (req, res, next) => {
 };
 
 // Send a friend request
-exports.sendFriendRequest = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+exports.sendFriendRequest = async (req, res, next) => {
+  try {
+    const { receiver_id } = req.body;
+    const sender_id = req.user.id;
+
+    if (sender_id === receiver_id) {
+      return res.status(400).json({ message: 'You cannot send a friend request to yourself.' });
     }
-    try {
-        const newRequest = await FriendRequest.create({
-            senderId: req.user.id, // Associate request with the sender
-            ...req.body,
-        });
-        res.status(201).json({ message: 'Friend request sent', request: newRequest });
-    } catch (error) {
-        console.error('Error in sendFriendRequest:', error);
-        res.status(500).json({ message: 'Error sending friend request', error: error.message });
+
+    const existingRequest = await FriendRequest.findOne({ sender_id, receiver_id });
+    if (existingRequest) {
+      return res.status(400).json({ message: 'Friend request already sent.' });
     }
+
+    const newRequest = await FriendRequest.create({ sender_id, receiver_id });
+    res.status(201).json(newRequest);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // Accept a friend request
 exports.acceptFriendRequest = async (req, res, next) => {
   try {
-    const { requestId } = req.params;
-    const request = await FriendRequest.findById(requestId);
+    const { id } = req.params;
+    const receiver_id = req.user.id;
 
+    const request = await FriendRequest.findOne({ _id: id, receiver_id, status: 'pending' });
     if (!request) {
-      return res.status(404).json({ message: 'Friend request not found' });
+      return res.status(404).json({ message: 'Friend request not found.' });
     }
 
-    if (request.receiverId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'You are not authorized to accept this request' });
-    }
+    request.status = 'accepted';
+    await request.save();
 
-    // Add each other as friends (logic depends on your user model)
-    // Example:
-    // await User.findByIdAndUpdate(req.user.id, { $push: { friends: request.senderId } });
-    // await User.findByIdAndUpdate(request.senderId, { $push: { friends: req.user.id } });
+    await Friend.create([
+      { user_id: request.sender_id, friend_id: request.receiver_id },
+      { user_id: request.receiver_id, friend_id: request.sender_id },
+    ]);
 
-    await request.remove();
-    res.status(200).json({ message: 'Friend request accepted' });
-  } catch (err) {
-    next(err);
+    res.status(200).json({ message: 'Friend request accepted.' });
+  } catch (error) {
+    next(error);
   }
 };
 
 // Reject a friend request
 exports.rejectFriendRequest = async (req, res, next) => {
   try {
-    const { requestId } = req.params;
-    const request = await FriendRequest.findById(requestId);
+    const { id } = req.params;
+    const receiver_id = req.user.id;
 
+    const request = await FriendRequest.findOne({ _id: id, receiver_id, status: 'pending' });
     if (!request) {
-      return res.status(404).json({ message: 'Friend request not found' });
+      return res.status(404).json({ message: 'Friend request not found.' });
     }
 
-    if (request.receiverId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'You are not authorized to reject this request' });
-    }
+    request.status = 'rejected';
+    await request.save();
 
-    await request.remove();
-    res.status(200).json({ message: 'Friend request rejected' });
-  } catch (err) {
-    next(err);
+    res.status(200).json({ message: 'Friend request rejected.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// List friends
+exports.listFriends = async (req, res, next) => {
+  try {
+    const user_id = req.user.id;
+    const friends = await Friend.find({ user_id }).populate('friend_id', 'name email');
+    res.status(200).json(friends);
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -132,6 +147,25 @@ exports.sendChatMessage = async (req, res, next) => {
     res.status(201).json(message);
   } catch (err) {
     next(err);
+  }
+};
+
+// Send a chat message using a persistent message queue
+exports.sendMessageWithQueue = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { content } = req.body;
+
+    const connection = await amqp.connect('amqp://localhost');
+    const channel = await connection.createChannel();
+    const queue = 'chat_messages';
+
+    await channel.assertQueue(queue, { durable: true });
+    channel.sendToQueue(queue, Buffer.from(JSON.stringify({ sender: req.user.id, receiver: userId, content })), { persistent: true });
+
+    res.status(200).json({ message: 'Message queued successfully' });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -196,5 +230,23 @@ exports.getSuggestedFriends = async (req, res, next) => {
     res.status(200).json(suggestedFriends);
   } catch (err) {
     next(err);
+  }
+};
+
+// Report abusive content
+exports.reportContent = async (req, res, next) => {
+  try {
+    const { contentId, reason } = req.body;
+    const userId = req.user.id;
+
+    const report = await Report.create({
+      contentId,
+      reason,
+      reportedBy: userId,
+    });
+
+    res.status(201).json({ message: 'Content reported successfully', report });
+  } catch (error) {
+    next(error);
   }
 };

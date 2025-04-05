@@ -75,3 +75,21 @@ exports.getPriorityNotifications = async (req, res, next) => {
         next(error); // Pass error to global error handler
     }
 };
+
+// Update notification preferences for users
+exports.updateNotificationPreferences = async (req, res, next) => {
+  try {
+    const { email_enabled, sms_enabled, in_app_enabled } = req.body;
+    const userId = req.user.id;
+
+    const preferences = await NotificationPreferences.findOneAndUpdate(
+      { user_id: userId },
+      { email_enabled, sms_enabled, in_app_enabled },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({ message: 'Preferences updated successfully', preferences });
+  } catch (error) {
+    next(error);
+  }
+};

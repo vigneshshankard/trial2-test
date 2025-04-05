@@ -1,57 +1,48 @@
 const jwt = require('jsonwebtoken');
+const helmet = require('helmet');
+const redisClient = require('./redisClient');
 
-module.exports = (req, res, next) => {
-    const token = req.headers['authorization']?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ message: 'Unauthorized: No token provided' });
-    }
+module.exports = (app, requiredRoles = []) => {
+    // Add helmet for enhanced security
+    app.use(helmet());
 
-    const JWT_SECRET = process.env.JWT_SECRET;
-    if (!JWT_SECRET) {
-        console.error('JWT_SECRET is not set in the environment variables.');
-        return res.status(500).json({ message: 'Internal Server Error: Missing configuration' });
-    }
-
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+    return (req, res, next) => {
+        const token = req.headers['authorization']?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: 'Unauthorized: No token provided' });
         }
 
-        // Extract roles and permissions from the token
-        const { roles, permissions } = decoded;
-        req.user = { id: decoded.id, roles, permissions };
+        const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
 
-        // Helper method for role-based access control
-        req.checkRole = (requiredRole) => {
-            if (!roles.includes(requiredRole)) {
-                const error = new Error(`Forbidden: Requires ${requiredRole} role`);
-                error.status = 403;
-                throw error;
+        jwt.verify(token, JWT_SECRET, async (err, decoded) => {
+            if (err) {
+                return res.status(401).json({ message: 'Unauthorized: Invalid token' });
             }
-        };
 
-        // Helper method for permission-based access control
-        req.checkPermission = (requiredPermission) => {
-            if (!permissions.includes(requiredPermission)) {
-                const error = new Error(`Forbidden: Requires ${requiredPermission} permission`);
-                error.status = 403;
-                throw error;
+            const isRevoked = await redisClient.get(`revoked_token:${token}`);
+            if (isRevoked) {
+                return res.status(401).json({ message: 'Token has been revoked' });
             }
-        };
 
-        next();
-    });
+            req.user = decoded;
+
+            if (requiredRoles.length > 0 && !requiredRoles.some(role => req.user.roles.includes(role))) {
+                return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
+            }
+
+            next();
+        });
+    };
 };
 
 /**
  * Middleware Usage:
  * - Validates JWT tokens from the `Authorization` header.
- * - Extracts `roles` and `permissions` for role-based and permission-based access control.
- * - Provides `req.checkRole` and `req.checkPermission` for enforcing access control in routes.
+ * - Extracts `roles` for role-based access control.
+ * - Allows specifying required roles for securing endpoints.
  *
  * Example:
- * router.get('/example', authMiddleware, (req, res) => {
- *     req.checkRole('admin');
+ * router.get('/example', authMiddleware(app, ['admin']), (req, res) => {
  *     res.send('Access granted');
  * });
  */

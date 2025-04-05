@@ -44,4 +44,32 @@ router.get(
  */
 router.get('/suggested-topics', authMiddleware, contentController.getSuggestedTopics);
 
+/**
+ * @route GET /dummy-data
+ * @desc Fetch dummy data
+ * @access Authenticated users
+ */
+router.get('/dummy-data', authMiddleware, contentController.getDummyData);
+
+/**
+ * @route GET /content/hierarchy
+ * @desc Fetch content hierarchy
+ * @access Authenticated users
+ */
+router.get('/content/hierarchy', authMiddleware, contentController.getContentHierarchy);
+
+/**
+ * @route POST /content/bulk-upload
+ * @desc Bulk upload content
+ * @access Authenticated users
+ */
+router.post('/content/bulk-upload', authMiddleware, contentController.bulkUploadContent);
+
+/**
+ * @route GET /content/:id
+ * @desc Fetch content with Redis caching
+ * @access Authenticated users
+ */
+router.get('/content/:id', authMiddleware, contentController.getCachedContent);
+
 module.exports = router;

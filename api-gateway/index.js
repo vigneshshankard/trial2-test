@@ -1,3 +1,25 @@
+/**
+ * # API Gateway Documentation
+ *
+ * ## Overview
+ * The API Gateway serves as the central entry point for all microservices. It routes requests to the appropriate service and handles cross-cutting concerns like authentication, rate-limiting, and logging.
+ *
+ * ## Key Features
+ * - **Authentication**: Validates JWT tokens for secure access.
+ * - **Rate Limiting**: Prevents abuse by limiting the number of requests per IP.
+ * - **Service Routing**: Routes requests to the appropriate microservice based on the endpoint.
+ *
+ * ## Example Routes
+ * - `/user-management/*` → User Management Service
+ * - `/content-management/*` → Content Management Service
+ * - `/exam-management/*` → Exam Management Service
+ * - `/billing-service/*` → Billing Service
+ * - `/social-interaction/*` → Social Interaction Service
+ * - `/current-affairs-service/*` → Current Affairs Service
+ * - `/analytics-service/*` → Analytics Service
+ * - `/admin-dashboard-service/*` → Admin Dashboard Service
+ */
+
 require('dotenv').config();
 
 const express = require('express');
@@ -14,6 +36,9 @@ const expressSanitizer = require('express-sanitizer');
 const session = require('express-session');
 const createCircuitBreaker = require('../shared/circuitBreaker');
 const healthcheck = require('express-healthcheck');
+const authMiddleware = require('../shared/authMiddleware');
+const helmet = require('helmet');
+const morgan = require('morgan');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -102,6 +127,9 @@ app.use(session({
   cookie: { secure: false } // Set to true if using HTTPS
 }));
 
+// Middleware for security headers
+app.use(helmet());
+
 // Middleware for logging requests
 app.use((req, res, next) => {
   logger.info({
@@ -113,14 +141,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Apply rate limiting to all routes
+// Middleware for rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
-
 app.use(limiter);
+
+// Middleware for logging
+app.use(morgan('combined'));
 
 // Use environment variable for JWT secret
 const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
@@ -154,6 +184,9 @@ app.use((req, res, next) => {
     next();
   });
 });
+
+// Apply authentication middleware to all routes
+app.use(authMiddleware());
 
 // Centralized routing configuration
 const routesConfig = [

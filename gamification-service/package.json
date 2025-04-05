@@ -1,0 +1,19 @@
+{
+  "name": "gamification-service",
+  "version": "1.0.0",
+  "description": "Microservice for gamification features like badges, leaderboards, and rewards.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mongoose": "^6.8.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "supertest": "^6.3.0"
+  }
+}

@@ -83,4 +83,19 @@ router.post('/friend-requests/:requestId/reject', authMiddleware, socialControll
 // Route to fetch suggested friends
 router.get('/suggested-friends', authMiddleware, socialController.getSuggestedFriends);
 
+// Route to send a friend request
+router.post('/friends/requests', authMiddleware, socialController.sendFriendRequest);
+
+// Route to accept a friend request
+router.patch('/friends/requests/:id', authMiddleware, socialController.acceptFriendRequest);
+
+// Route to reject a friend request
+router.delete('/friends/requests/:id', authMiddleware, socialController.rejectFriendRequest);
+
+// Route to list friends
+router.get('/friends', authMiddleware, socialController.listFriends);
+
+// Route to report abusive chat messages or posts
+router.post('/report', authMiddleware, socialController.reportContent);
+
 module.exports = router;
