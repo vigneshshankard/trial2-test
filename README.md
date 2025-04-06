@@ -31,7 +31,35 @@ UPSCMONK is a user-friendly platform designed for UPSC aspirants, offering study
 - **Content Management**: Admins can upload, update, and organize study materials, quizzes, and mock tests. This ensures the platform remains up-to-date with high-quality content.
 - **User Management**: Admins can assign or remove premium badges for users, manage user accounts, and resolve issues. This ensures smooth platform operations.
 - **Notifications**: Admins can schedule and send alerts for important updates, such as new content releases, exam notifications, and platform announcements. This keeps users informed and engaged.
-- **Analytics**: Admins can monitor user behavior, such as content usage and test performance, as well as AI model performance. This helps in making data-driven decisions to improve the platform.
+- **Analytics**: Admins can monitor user behavior, such as content usage and test performance. This helps in making data-driven decisions to improve the platform.
+
+---
+
+## Microservices Interconnections
+
+The microservices in this project communicate in several ways:
+
+1.  **Message Queue (RabbitMQ):** The `Social Interaction` service uses RabbitMQ for chat messaging. Messages are published to the `chat_messages` queue. Message queues are used to facilitate asynchronous communication between services, improving responsiveness and decoupling services.
+
+2.  **External Calls:** Some interconnections between microservices are done via direct external calls using circuit breakers. This pattern enhances resilience by preventing cascading failures.  For instance:
+    *   The `AI Study Planner` calls the `AI Plan Generator` service to create a study plan.
+    *   The `Notification Service` calls the `Notification Dispatcher` service to send notifications.
+    *   The `Exam Management` service calls the `Exam Submission` service to handle quiz submissions.
+    *   The `Analytics` service uses methods from its internal `Analytics Service`, which may involve calls to other services to generate heatmaps, benchmarks, and completion date predictions.
+
+3.  **External Library:** The `Billing` service uses the `PaymentGateway` external library to handle payment processing.
+
+4.  **Database sharing**: 
+    *   The `Social interaction` service directly accesses the user model of the `user-management` service in the `getSuggestedFriends` method. This approach can introduce coupling between services.  Consider using external calls instead to reduce dependencies.
+    *   The `Content management` service directly accesses the `Quiz` model of the `exam-management` service in the `getDummyData` method. Similar to the above, using external calls could improve decoupling.
+
+5.  **Redis:** Redis is used for caching content in the `Content Management` service and managing exam sessions in the `Exam Management` service. Caching improves performance by reducing database load, while session management allows tracking and persisting user's exam progress.
+
+6.  **Circuit Breakers**: Circuit Breakers are implemented in several interconnections to make the system more resilient by preventing cascading failures and providing fallback mechanisms.
+
+7.  **API Documentation**: In addition to using Swagger or OpenAPI for overall API documentation, each service should have its own API documentation detailing its specific endpoints, request/response formats, and authentication requirements. This promotes better understanding and maintainability of individual services.
+
+8.  **Database reference**: Database references between services can cause tight coupling and hinder independent scalability and maintainability. Consider refactoring these to use external calls (APIs) instead, promoting loose coupling and better service autonomy.
 
 ---
 
@@ -183,6 +211,160 @@ The backend is composed of multiple microservices, each responsible for a specif
 ### Integrations
 - **Suggested Friends**: Fetches mutual connections and shared interests for friend suggestions.
 
+---
 
+# Project Documentation
+
+## 1. Project Overview
+
+This project is a comprehensive educational platform designed for UPSC (Union Public Service Commission) exam preparation. It offers a wide range of features and resources to help students prepare effectively for the exams. The platform utilizes a microservices architecture to ensure scalability, maintainability, and independent development of different functionalities.
+
+## 2. Microservices
+
+The backend is composed of multiple microservices, each responsible for a specific domain of the application:
+
+*   **Admin Dashboard Service**: Manages administrative tasks, including user management, audit logging, and system configuration.
+*   **AI Study Planner Service**: Generates personalized study plans for users based on their inputs and progress.
+*   **Analytics Service**: Provides analytics on user behavior, content usage, and test performance, offering insights for platform improvement.
+*   **Billing Service**: Handles subscription management, payment processing, and invoicing.
+*   **Content Management Service**: Manages all study materials, current affairs content, and suggested topics.
+*   **Current Affairs Service**: Specifically handles the creation, retrieval, updating, and deletion of current affairs content.
+*   **Exam Management Service**: Manages quizzes, mock tests, question banks, and user performance tracking.
+*   **Gamification Service**: Implements gamification features like leaderboards, achievements, badges, and points to motivate users.
+*   **Notification Service**: Handles sending notifications to users via various channels (email, SMS, in-app).
+*   **Social Interaction Service**: Manages social features such as user posts, friend requests, chats, and groups.
+*   **User Management Service**: Handles user registration, login, profile management, role management, and account settings.
+
+## 3. API Endpoints
+
+The following table lists all the API endpoints for each microservice, including their HTTP method, description, and access control:
+
+| Service                 | Method | Endpoint                                   | Description                                                                        | Access Control                                 |
+| :---------------------- | :----- | :----------------------------------------- | :--------------------------------------------------------------------------------- | :--------------------------------------------- |
+| **Admin Dashboard**     | GET    | `/users`                                   | Lists all users                                                                    | Admin                                          |
+|                         | POST   | `/audit-log`                               | Logs an admin action                                                               | Admin                                          |
+| **AI Study Planner**    | POST   | `/plans`                                  | Generates a new study plan                                                        | User, Subscriber                               |
+|                         | GET    | `/plans/:userId`                            | Retrieves a user's study plan                                                      | User, Subscriber, and same user or admin      |
+|                         | PUT    | `/plans/:userId`                            | Updates a study plan                                                               | Subscriber, and same user or admin            |
+| **Analytics**           | GET    | `/advanced`                               | Retrieves advanced analytics                                                         | Authenticated User                            |
+|                         | POST   | `/predict`                                | Predicts completion date                                                            | Authenticated User                            |
+| **Billing**             | POST   | `/create-subscription`                    | Creates a new subscription                                                         | Authenticated User                            |
+|                         | GET    | `/invoices`                               | Retrieves invoices                                                                 | Authenticated User                            |
+|                         | POST   | `/refund`                                  | Processes a refund                                                                 | Authenticated User                            |
+| **Content Management**  | GET    | `/study-materials`                        | Fetches study materials                                                            | Visitor, User, Subscriber                      |
+|                         | GET    | `/current-affairs`                        | Fetches current affairs                                                            | Visitor, User, Subscriber                      |
+|                         | GET    | `/suggested-topics`                      | Fetches suggested topics                                                          | Authenticated User                            |
+|                         | GET    | `/dummy-data`                             | Fetches dummy data                                                               | Authenticated User                            |
+|                         | GET    | `/content/hierarchy`                     | Fetches content hierarchy                                                         | Authenticated User                            |
+|                         | POST   | `/content/bulk-upload`                    | Bulk uploads content                                                               | Authenticated User                            |
+|                         | GET    | `/content/:id`                            | Fetches content with Redis caching                                                  | Authenticated User                            |
+| **Current Affairs**     | GET    | `/`                                       | Gets current affairs, with optional filtering (category, tags, featured) pagination | Public                                         |
+|                         | GET    | `/:id`                                     | Gets current affair by ID                                                        | Public                                         |
+|                         | GET    | `/:id/quiz`                                | Gets quiz for current affair                                                       | Public                                         |
+|                         | POST   | `/`                                       | Creates a new current affair                                                      | Admin                                          |
+|                         | PUT    | `/:id`                                     | Updates a current affair                                                         | Admin                                          |
+|                         | DELETE | `/:id`                                     | Deletes a current affair                                                         | Admin                                          |
+| **Exam Management**     | POST   | `/quizzes`                                | Creates a new quiz                                                                 | Admin                                          |
+|                         | GET    | `/quizzes/:id`                            | Gets a quiz by ID                                                                  | Visitor, User, Subscriber                      |
+|                         | GET    | `/quizzes`                                | Gets all quizzes                                                                  | Visitor, User, Subscriber                      |
+|                         | GET    | `/quizzes/:id/start`                      | Starts a quiz                                                                      | User, Subscriber                               |
+|                         | POST   | `/quizzes/:id/submit`                     | Submits quiz answers                                                              | User, Subscriber                               |
+|                         | GET    | `/analytics`                              | Gets quiz analytics                                                                | Subscriber                                     |
+|                         | POST    | `/exams/:id/pause`                     | Pause an exam                                                                      | User, Subscriber                               |
+| **Gamification**        | GET    | `/achievements/:userId`                   | Fetches user achievements                                                         | User, Admin                                    |
+|                         | GET    | `/leaderboard`                            | Fetches the leaderboard                                                           | User, Admin                                    |
+|                         | GET    | `/points/:userId`                         | Fetches user points                                                               | User, Admin                                    |
+|                         | POST   | `/badges`                                 | Sets badge criteria (Admin)                                                       | Admin                                          |
+|                         | POST   | `/leaderboard`                          | Sets leaderboard logic (Admin)                                                   | Admin                                          |
+|                         | POST   | `/points`                                 | Sets point rules (Admin)                                                           | Admin                                          |
+| **Notification**        | POST   | `/send`                                    | Sends a notification                                                              | Admin, Regular                                 |
+|                         | GET    | `/:userId`                                 | Gets notifications for a user                                                    | Admin, Regular                                 |
+|                         | GET    | `/priority`                               | Gets priority notifications                                                      | Admin, Regular                                 |
+|                         | PUT    | `/preferences`                            | Updates notification preferences                                                   | Admin, Regular                                 |
+| **Social Interaction**  | POST   | `/posts`                                  | Creates a new post                                                                 | User, Subscriber                               |
+|                         | GET    | `/posts`                                  | Gets all posts                                                                    | User, Subscriber                               |
+|                         | POST   | `/friend-requests`                        | Sends a friend request                                                            | User, Subscriber                               |
+|                         | GET    | `/posts`                           | Gets all posts                                                            | Authenticated User                            |
+|                         | POST   | `/posts`                           | Creates a new post                                                            | Authenticated User                            |
+|                         | GET    | `/chats/:userId`                        | Gets chat messages between two users                                            | Authenticated User                            |
+|                         | POST   | `/chats/:userId`                        | Sends a chat message                                                              | Authenticated User                            |
+|                         | POST   | `/groups`                                 | Creates a new group                                                               | Authenticated User                            |
+|                         | GET    | `/groups/:groupId`                        | Gets group details                                                                | Authenticated User                            |
+|                         | POST   | `/groups/:groupId/messages`               | Sends a message in a group                                                        | Authenticated User                            |
+|                         | POST   | `/friend-requests/:requestId/accept`      | Accepts a friend request                                                          | Authenticated User                            |
+|                         | POST   | `/friend-requests/:requestId/reject`      | Rejects a friend request                                                          | Authenticated User                            |
+|                         | GET    | `/suggested-friends`                     | Gets suggested friends                                                          | Authenticated User                            |
+|                         | POST   | `/friends/requests`                   | Sends a friend request                                                        | Authenticated User                            |
+|                         | PATCH   | `/friends/requests/:id`                   | Accepts a friend request                                                        | Authenticated User                            |
+|                         | DELETE   | `/friends/requests/:id`                   | Rejects a friend request                                                        | Authenticated User                            |
+|                         | GET    | `/friends`                                 | Lists friends                                                                      | Authenticated User                            |
+|                         | POST    | `/report`                              | Reports abusive content                                                            | Authenticated User                            |
+| **User Management**     | POST   | `/register`                               | Registers a new user                                                               | Public                                         |
+|                         | POST   | `/login`                                  | Logs in a user                                                                    | Public                                         |
+|                         | POST   | `/reset-password`                        | Initiates the password reset process                                                | Public                                         |
+|                         | GET    | `/verify-email/:token`                  | Verifies user email                                                               | Public                                         |
+|                         | GET    | `/profile`                                | Gets the authenticated user's profile                                               | Authenticated User                            |
+|                         | GET    | `/:id`                                    | Gets a user by ID                                                                  | Authenticated User                            |
+|                         | PUT    | `/:id/role`                               | Updates a user's role                                                             | Authenticated User                            |
+|                         | DELETE | `/:id`                                    | Deletes a user                                                                    | Authenticated User                            |
+
+## 4. Technology Stack
+
+*   **Backend**: Node.js with Express.js
+*   **Database**: To be determined (e.g., MongoDB, PostgreSQL)
+*   **Authentication**: To be determined (e.g., JWT, OAuth)
+*   **Testing**: Jest
+
+## 5. Database
+
+The specific database technology used in this project is not yet defined. However, based on the project structure and common practices, it could be a NoSQL database like MongoDB or a relational database like PostgreSQL. The choice of database will depend on the specific requirements for data storage, relationships, and scalability.
+
+## 6. Authentication
+
+The authentication mechanism for this project is not explicitly defined in the provided file list. However, the presence of `authMiddleware.js` suggests that middleware is used to handle authentication. A common approach would be to use JSON Web Tokens (JWT) for authentication, where users receive a token upon successful login, and this token is used to authenticate subsequent requests.
+
+## 7. Service Communication
+
+The method of communication between microservices is not explicitly defined. A common approach for microservices is to use RESTful APIs for synchronous communication, where one service makes an HTTP request to another service. For asynchronous communication, message queues like Kafka or RabbitMQ can be used, where services publish and subscribe to messages.
+
+## 8. Error Handling
+
+The project includes `errorUtils.js` in the `shared` directory, indicating a centralized approach to error handling. This likely involves standardizing error responses across services, including error codes, messages, and possibly logging errors for debugging and monitoring.
+
+## 9. Configuration Management
+
+The configuration management strategy for this project is not explicitly detailed. However, a common practice is to use environment variables to manage configuration settings such as database connection strings, API keys, and other environment-specific parameters. Libraries like `dotenv` can be used to load environment variables from a `.env` file.
+
+## 10. Deployment
+
+The deployment strategy for this project is not specified in the provided files. However, given the microservices architecture, containerization with Docker and orchestration with Kubernetes would be a suitable approach. This would allow each microservice to be packaged as a Docker container and deployed independently, with Kubernetes managing scaling, load balancing, and other operational aspects.
+
+## 11. API Documentation
+
+While the project currently lacks formal API documentation, it is highly recommended to generate it using tools like Swagger (OpenAPI). By defining the API endpoints, request/response schemas, and authentication requirements in a standardized format (e.g., YAML or JSON), Swagger can automatically generate interactive documentation that is easy to explore and understand.
+
+---
+
+## Microservices Interconnections
+
+| Source Microservice  | Destination Microservice | Type of Connection                  | Specific Interaction                                                                   | Notes                                                                                                          |
+| :-------------------- | :----------------------- | :---------------------------------- | :------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| **Social Interaction** | **Message Queue**      | Message Queue (RabbitMQ) | `sendMessageWithQueue` publishes to `chat_messages` queue                               | `amqplib` used                                                                                                 |
+| **Social Interaction**    | **User Management** | Database reference | `getSuggestedFriends` fetch data directly from the user model | May be better as an external call. |
+| **Social Interaction**| **Report** | External call | `reportContent` uses a `Report` model | There is no code of how this communication happens.|
+| **AI Study Planner** | **AI Plan Generator**      | External Call                      | `generatePlan` uses `aiPlanGenerator` (circuit breaker) to generate the study plan      | The service used is not clear from this code                                                                   |
+| **AI Study Planner**      | **Study Plan**      | External Call                      | `getPlan` uses a circuit breaker                                                              | The service used is not clear from this code                                                                   |
+| **AI Study Planner**      | **Study Plan**      | External Call                      | `updatePlan` uses a circuit breaker to update the study plan                                                              | The service used is not clear from this code                                                                   |
+| **Notification**       | **Notification Dispatcher**       | External Call                      | `sendNotification` uses `notificationDispatcher` (circuit breaker) to send the notification     | The service used is not clear from this code                                                                   |
+| **Notification** | **Notification** | External Call                      | `getNotifications` use a circuit breaker to fetch the notifications| The service used is not clear from this code | 
+| **Content Management**      | **External API** | External API                      | `getStudyMaterials` fetches study materials from `https://api.example.com/study-materials`     |                                                                                                                |
+| **Content Management**| **Exam Management** | Database reference | `getDummyData` fetch data directly from the quiz model | May be better as an external call. |
+| **Content Management** | **Redis** | Data Base |`getCachedContent` interact with redis to manage cache | Redis client is shared|
+| **Exam Management**      | **Exam Submission**       | External Call                      | `submitQuiz` uses `examSubmissionBreaker` (circuit breaker) to submit the quiz     | The service used is not clear from this code                                                                   |
+| **Exam Management**      | **Redis**       | Database                      | `startExam`, `submitExam` and `autoSubmitStaleExams` uses redis to manage exam sessions     | The service used is not clear from this code                                                                   |
+| **User Management** | **Email Service** | External Call | `resetPassword` uses `EmailService.sendResetEmail` to send emails | The service used is not clear from this code |
+| **Billing** | **Payment Gateway** | External library | `createSubscription`, `processRefund` interacts with `PaymentGateway` |                                                                                                                |
+|**Analytics**| **Analytics Service** | External Call |`getAdvancedAnalytics` uses `AnalyticsService.generateHeatmaps` and `AnalyticsService.getPeerBenchmarks` | The service used is not clear from this code|
+| **Analytics** | **Analytics Service** | External Call | `predictCompletionDate` uses `AnalyticsService.predictCompletionDate` | The service used is not clear from this code |
 
 
