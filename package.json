@@ -17,7 +17,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^26.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^6.8.0",
+    "mongoose": "^6.13.8",
     "morgan": "^1.10.0",
     "node-fetch": "^3.3.2",
     "opossum": "^8.4.0",
@@ -40,5 +40,9 @@
     "mongodb-memory-server": "^10.1.4",
     "supertest": "^6.3.4",
     "ts-jest": "^29.3.0"
-  }
+  },
+  "workspaces": [
+    "backend/*",
+    "backend/*/*"
+  ]
 }

@@ -1,6 +1,10 @@
 const adminController = require('../controllers/adminController');
 
 // Set up mocks
+jest.mock('mongoose', () => ({
+  Schema: jest.fn(() => ({})),
+  model: jest.fn(() => ({}))
+}));
 jest.mock('../models/userModel', () => ({
   find: jest.fn()
 }));

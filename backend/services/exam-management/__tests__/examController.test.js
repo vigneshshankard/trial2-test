@@ -3,7 +3,7 @@ const Quiz = require('../models/quizModel');
 
 // Mock dependencies
 jest.mock('../models/quizModel');
-jest.mock('../../shared/redisClient', () => ({
+jest.mock('../../../../shared/redisClient', () => ({
   get: jest.fn(),
   set: jest.fn(),
   del: jest.fn(),

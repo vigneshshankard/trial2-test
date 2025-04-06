@@ -11,6 +11,15 @@ jest.mock('../../../shared/authMiddleware', () => ({
     next();
   })
 }));
+jest.mock('mongoose', () => {
+  const actualMongoose = jest.requireActual('mongoose');
+  return {
+    ...actualMongoose,
+    Schema: jest.fn(() => ({})),
+    model: jest.fn(() => ({})),
+    Types: { ObjectId: jest.fn(() => 'mockedObjectId') }
+  };
+});
 
 describe('Admin Routes', () => {
   let app;
