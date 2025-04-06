@@ -1,0 +1,853 @@
+openapi: 3.0.0
+info:
+  title: API Gateway Documentation
+  version: 1.0.0
+paths:
+  /billing/create-subscription:
+    post:
+      summary: Create a subscription
+      tags:
+        - Billing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                planId:
+                  type: string
+                  description: ID of the subscription plan
+      responses:
+        '200':
+          description: Subscription created successfully
+        '400':
+          description: Invalid request
+  /billing/invoices:
+    get:
+      summary: Get invoices
+      tags:
+        - Billing
+      responses:
+        '200':
+          description: List of invoices
+        '401':
+          description: Unauthorized
+  /billing/refund:
+    post:
+      summary: Process a refund
+      tags:
+        - Billing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transactionId:
+                  type: string
+                  description: ID of the transaction to refund
+      responses:
+        '200':
+          description: Refund processed successfully
+        '400':
+          description: Invalid request
+  /notifications/send:
+    post:
+      summary: Send a notification
+      tags:
+        - Notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: ID of the user to notify
+                type:
+                  type: string
+                  description: Type of notification
+                message:
+                  type: string
+                  description: Notification message
+      responses:
+        '200':
+          description: Notification sent successfully
+        '400':
+          description: Invalid request
+  /notifications/{userId}:
+    get:
+      summary: Get notifications for a user
+      tags:
+        - Notifications
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the user
+      responses:
+        '200':
+          description: List of notifications
+        '401':
+          description: Unauthorized
+  /notifications/priority:
+    get:
+      summary: Get priority notifications
+      tags:
+        - Notifications
+      responses:
+        '200':
+          description: List of priority notifications
+        '401':
+          description: Unauthorized
+  /notifications/preferences:
+    put:
+      summary: Update notification preferences
+      tags:
+        - Notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email_enabled:
+                  type: boolean
+                  description: Enable or disable email notifications
+                sms_enabled:
+                  type: boolean
+                  description: Enable or disable SMS notifications
+                in_app_enabled:
+                  type: boolean
+                  description: Enable or disable in-app notifications
+      responses:
+        '200':
+          description: Preferences updated successfully
+        '400':
+          description: Invalid request
+  /social/posts:
+    post:
+      summary: Create a new post
+      tags:
+        - Social Interaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: Content of the post
+      responses:
+        '200':
+          description: Post created successfully
+        '400':
+          description: Invalid request
+    get:
+      summary: Get all posts
+      tags:
+        - Social Interaction
+      responses:
+        '200':
+          description: List of posts
+        '401':
+          description: Unauthorized
+  /social/friend-requests:
+    post:
+      summary: Send a friend request
+      tags:
+        - Social Interaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                receiverId:
+                  type: string
+                  description: Receiver's User ID
+      responses:
+        '200':
+          description: Friend request sent successfully
+        '400':
+          description: Invalid request
+  /social/chats/{userId}:
+    get:
+      summary: Get chat messages with a user
+      tags:
+        - Social Interaction
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the user to chat with
+      responses:
+        '200':
+          description: List of chat messages
+        '401':
+          description: Unauthorized
+    post:
+      summary: Send a chat message to a user
+      tags:
+        - Social Interaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: Message content
+      responses:
+        '200':
+          description: Message sent successfully
+        '400':
+          description: Invalid request
+  /social/groups:
+    post:
+      summary: Create a new group
+      tags:
+        - Social Interaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name of the group
+      responses:
+        '200':
+          description: Group created successfully
+        '400':
+          description: Invalid request
+  /social/groups/{groupId}:
+    get:
+      summary: Get group details
+      tags:
+        - Social Interaction
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the group
+      responses:
+        '200':
+          description: Group details retrieved successfully
+        '401':
+          description: Unauthorized
+    post:
+      summary: Send a message to a group
+      tags:
+        - Social Interaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: Message content
+      responses:
+        '200':
+          description: Message sent successfully
+        '400':
+          description: Invalid request
+  /admin/users:
+    get:
+      summary: List all users
+      tags:
+        - Admin Dashboard
+      responses:
+        '200':
+          description: List of users
+        '401':
+          description: Unauthorized
+  /admin/audit-log:
+    post:
+      summary: Log admin actions
+      tags:
+        - Admin Dashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  description: Description of the admin action
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: Timestamp of the action
+      responses:
+        '200':
+          description: Action logged successfully
+        '400':
+          description: Invalid request
+  /study-planner/plans:
+    post:
+      summary: Generate a new study plan
+      tags:
+        - AI Study Planner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject:
+                  type: string
+                  description: Subject to study
+                duration:
+                  type: integer
+                  description: Duration in days
+      responses:
+        '200':
+          description: Study plan generated successfully
+        '400':
+          description: Invalid request
+  /study-planner/plans/{userId}:
+    get:
+      summary: Retrieve a user's study plan
+      tags:
+        - AI Study Planner
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Study plan retrieved successfully
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update a study plan
+      tags:
+        - AI Study Planner
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID (MongoDB ObjectId)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject:
+                  type: string
+                  description: Updated subject to study
+                duration:
+                  type: integer
+                  description: Updated duration in days
+      responses:
+        '200':
+          description: Study plan updated successfully
+        '400':
+          description: Invalid request
+  /analytics/advanced:
+    get:
+      summary: Retrieve advanced analytics
+      tags:
+        - Analytics
+      responses:
+        '200':
+          description: Advanced analytics retrieved successfully
+        '401':
+          description: Unauthorized
+  /analytics/predict:
+    post:
+      summary: Predict completion date
+      tags:
+        - Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: ID of the user
+                taskId:
+                  type: string
+                  description: ID of the task
+      responses:
+        '200':
+          description: Prediction generated successfully
+        '400':
+          description: Invalid request
+  /content-management/study-materials:
+    get:
+      summary: Fetch study materials
+      tags:
+        - Content Management
+      responses:
+        '200':
+          description: Study materials retrieved successfully
+        '401':
+          description: Unauthorized
+  /content-management/current-affairs:
+    get:
+      summary: Fetch current affairs
+      tags:
+        - Content Management
+      responses:
+        '200':
+          description: Current affairs retrieved successfully
+        '401':
+          description: Unauthorized
+  /content-management/suggested-topics:
+    get:
+      summary: Fetch suggested topics
+      tags:
+        - Content Management
+      responses:
+        '200':
+          description: Suggested topics retrieved successfully
+        '401':
+          description: Unauthorized
+  /content-management/dummy-data:
+    get:
+      summary: Fetch dummy data
+      tags:
+        - Content Management
+      responses:
+        '200':
+          description: Dummy data retrieved successfully
+        '401':
+          description: Unauthorized
+  /content-management/content/hierarchy:
+    get:
+      summary: Fetch content hierarchy
+      tags:
+        - Content Management
+      responses:
+        '200':
+          description: Content hierarchy retrieved successfully
+        '401':
+          description: Unauthorized
+  /content-management/content/bulk-upload:
+    post:
+      summary: Bulk upload content
+      tags:
+        - Content Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                  description: List of file paths to upload
+      responses:
+        '200':
+          description: Content uploaded successfully
+        '400':
+          description: Invalid request
+  /content-management/content/{id}:
+    get:
+      summary: Fetch content with Redis caching
+      tags:
+        - Content Management
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the content
+      responses:
+        '200':
+          description: Content retrieved successfully
+        '401':
+          description: Unauthorized
+  /current-affairs:
+    get:
+      summary: Fetch current affairs
+      tags:
+        - Current Affairs
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by category
+        - name: tags
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by tags
+        - name: featured
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Filter by featured status
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Limit the number of results
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Page number for pagination
+      responses:
+        '200':
+          description: Current affairs retrieved successfully
+        '400':
+          description: Invalid request
+  /current-affairs/{id}:
+    get:
+      summary: Fetch a specific current affair by ID
+      tags:
+        - Current Affairs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the current affair
+      responses:
+        '200':
+          description: Current affair retrieved successfully
+        '400':
+          description: Invalid request
+    put:
+      summary: Update a specific current affair by ID
+      tags:
+        - Current Affairs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the current affair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Title of the current affair
+                description:
+                  type: string
+                  description: Description of the current affair
+                category:
+                  type: string
+                  description: Category of the current affair
+                source_url:
+                  type: string
+                  description: Source URL of the current affair
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: Tags associated with the current affair
+                is_featured:
+                  type: boolean
+                  description: Whether the current affair is featured
+      responses:
+        '200':
+          description: Current affair updated successfully
+        '400':
+          description: Invalid request
+    delete:
+      summary: Delete a specific current affair by ID
+      tags:
+        - Current Affairs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the current affair
+      responses:
+        '200':
+          description: Current affair deleted successfully
+        '400':
+          description: Invalid request
+  /current-affairs/{id}/quiz:
+    get:
+      summary: Fetch quiz for a specific current affair
+      tags:
+        - Current Affairs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the current affair
+      responses:
+        '200':
+          description: Quiz retrieved successfully
+        '400':
+          description: Invalid request
+  /current-affairs:
+    post:
+      summary: Create a new current affair
+      tags:
+        - Current Affairs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Title of the current affair
+                description:
+                  type: string
+                  description: Description of the current affair
+                category:
+                  type: string
+                  description: Category of the current affair
+                source_url:
+                  type: string
+                  description: Source URL of the current affair
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: Tags associated with the current affair
+                is_featured:
+                  type: boolean
+                  description: Whether the current affair is featured
+      responses:
+        '201':
+          description: Current affair created successfully
+        '400':
+          description: Invalid request
+  /exam-management/quizzes:
+    post:
+      summary: Create a new quiz
+      tags:
+        - Exam Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Title of the quiz
+                questions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      questionText:
+                        type: string
+                        description: Text of the question
+                      options:
+                        type: array
+                        items:
+                          type: string
+                        description: Options for the question
+                      correctOption:
+                        type: string
+                        description: Correct option for the question
+      responses:
+        '201':
+          description: Quiz created successfully
+        '400':
+          description: Invalid request
+    get:
+      summary: Get all quizzes
+      tags:
+        - Exam Management
+      responses:
+        '200':
+          description: List of quizzes retrieved successfully
+        '401':
+          description: Unauthorized
+  /exam-management/quizzes/{id}:
+    get:
+      summary: Get a quiz by ID
+      tags:
+        - Exam Management
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Quiz ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Quiz retrieved successfully
+        '400':
+          description: Invalid request
+  /exam-management/quizzes/{id}/start:
+    get:
+      summary: Start a quiz
+      tags:
+        - Exam Management
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Quiz ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Quiz started successfully
+        '400':
+          description: Invalid request
+  /exam-management/quizzes/{id}/submit:
+    post:
+      summary: Submit quiz answers
+      tags:
+        - Exam Management
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Quiz ID (MongoDB ObjectId)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answers:
+                  type: array
+                  items:
+                    type: string
+                  description: Array of answers
+                timeTaken:
+                  type: integer
+                  description: Time taken to complete the quiz (in seconds)
+      responses:
+        '200':
+          description: Quiz submitted successfully
+        '400':
+          description: Invalid request
+  /exam-management/analytics:
+    get:
+      summary: Get quiz analytics
+      tags:
+        - Exam Management
+      responses:
+        '200':
+          description: Analytics retrieved successfully
+        '401':
+          description: Unauthorized
+  /exam-management/exams/{id}/pause:
+    post:
+      summary: Pause an ongoing test
+      tags:
+        - Exam Management
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Exam ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Test paused successfully
+        '400':
+          description: Invalid request
+  /gamification/achievements/{userId}:
+    get:
+      summary: Fetch user achievements
+      tags:
+        - Gamification
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: User achievements retrieved successfully
+        '401':
+          description: Unauthorized
+  /gamification/leaderboard:
+    get:
+      summary: Fetch leaderboard
+      tags:
+        - Gamification
+      responses:
+        '200':
+          description: Leaderboard retrieved successfully
+        '401':
+          description: Unauthorized
+  /gamification/points/{userId}:
+    get:
+      summary: Fetch user points
+      tags:
+        - Gamification
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: User points retrieved successfully
+        '401':
+          description: Unauthorized
