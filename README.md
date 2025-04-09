@@ -71,6 +71,190 @@ The microservices in this project communicate in several ways:
 
 ---
 
+## Frontend Development Action Plan
+
+### Design System & Architecture
+
+#### 1. Design System Implementation
+- **Color Palette**
+  - Primary: Deep navy blue (#0F3460) - For headers, primary elements
+  - Secondary: Teal (#1A7F88) - For secondary elements, highlights
+  - Accent/CTA: Amber gold (#FFB400) - For call-to-action buttons
+  - Success: Green (#4CAF50) - For success states
+  - Error: Crimson (#DC3545) - For error states
+  - Neutral: Various grays for text and backgrounds
+
+- **Typography**
+  - Headings: Merriope (serif) for academic authority
+  - Body: Inter (sans-serif) for readability
+  - UI Elements: Nunito Sans for friendly interface elements
+
+- **Component Library**
+  - Build on Tailwind CSS with custom configurations
+  - Create reusable UI components with consistent styling
+  - Implement responsive design patterns
+
+#### 2. Frontend Architecture
+- **Next.js Framework**
+  - Implement page-based routing
+  - Set up API routes for backend communication
+  - Configure server-side rendering for performance
+
+- **State Management**
+  - Context API for user authentication state
+  - Redux for complex state management
+  - React Query for API data fetching and caching
+
+### Page Redesigns by User Role
+
+#### 1. Visitor Experience (Unregistered Users)
+- **Homepage**
+  - Hero section with compelling split layout
+  - Interactive demonstration of platform features
+  - Limited preview of current affairs (7-day window)
+  - Sample study materials showcased with premium indicators
+  - Registration CTA strategically placed
+
+- **Study Materials Preview Page**
+  - Grid layout of 3-5 sample materials with preview functionality
+  - Clear "locked" indicators for premium content
+  - Registration prompts with benefit highlights
+
+- **Current Affairs Preview Page**
+  - Interactive timeline for 7-day current affairs
+  - Category filters with visual design
+  - Registration prompts for full access
+
+- **Mock Tests Preview Page**
+  - Limited quizzes with sample questions
+  - Basic results page with registration prompt for advanced analytics
+  - Visual preview of premium test features
+
+#### 2. Free Tier User Experience
+- **Dashboard**
+  - Personalized greeting and progress overview
+  - Study streak visualization with calendar heatmap
+  - Quick access to recently viewed materials
+  - AI-recommended study topics
+  - Notifications center
+  - Upgrade to premium prompts
+
+- **Study Materials Page**
+  - Comprehensive filter system (subject, topic, type)
+  - Bookmarking functionality
+  - Progress tracking within materials
+  - Note-taking capability
+  - Clear premium content indicators
+
+- **Current Affairs Page**
+  - Complete current affairs access with advanced filtering
+  - Search functionality
+  - Downloadable content options
+  - Related quizzes section
+
+- **Study Planner**
+  - Basic AI-generated study schedule
+  - Calendar view with task tracking
+  - Manual adjustment capabilities
+  - Upgrade prompts for advanced features
+
+- **Social Features**
+  - Activity feed design
+  - Friend management interface
+  - Basic chat functionality
+  - Group creation and discovery
+
+#### 3. Premium Tier User Experience
+- **Enhanced Dashboard**
+  - Advanced analytics visualizations
+  - Performance predictors
+  - Comparative analysis with peer groups
+  - Mentor connection interface
+
+- **Advanced Study Planner**
+  - Adaptive AI planning with feedback loop
+  - Performance-based adjustments
+  - Integrated study tools (pomodoro timer, focus mode)
+  - Detailed analytics on productive hours
+
+- **Premium Mock Tests**
+  - Advanced test simulation environment
+  - Detailed solution explanations
+  - Performance analytics with percentile rankings
+  - Historical performance tracking
+
+- **Exclusive Content Section**
+  - Premium study materials with enhanced UI
+  - Expert video lecture interface
+  - Mentor Q&A section
+  - Priority notification center
+
+#### 4. Admin Interface
+- **Content Management Dashboard**
+  - Content creation interface with rich text editor
+  - Bulk upload functionality
+  - Content organization system with tags/categories
+  - Content performance metrics
+
+- **User Management Console**
+  - User listing with advanced filtering
+  - User profile management interface
+  - Role assignment and premium badge controls
+  - User analytics dashboard
+
+- **Analytics Center**
+  - Platform-wide usage statistics visualizations
+  - Content performance metrics
+  - Revenue reporting interface
+  - Search trend analysis
+
+### Implementation Phases
+
+#### Phase 1: Foundation 
+- Set up Next.js project structure
+- Implement design system (colors, typography, spacing)
+- Create base UI components (buttons, cards, forms)
+- Develop responsive layout templates
+
+#### Phase 2: Visitor Experience 
+- Implement redesigned homepage
+- Create study materials preview page
+- Develop current affairs preview page
+- Build mock test preview functionality
+- Implement authentication system
+
+#### Phase 3: Free Tier Experience 
+- Build user dashboard with personalization
+- Create comprehensive study materials interface
+- Implement current affairs page with full features
+- Develop basic study planner
+- Build social interaction components
+
+#### Phase 4: Premium & Admin Experience 
+- Implement advanced analytics visualizations
+- Create premium content interfaces
+- Develop adaptive study planner
+- Build admin dashboards and management tools
+- Implement premium mock test environment
+
+#### Phase 5: Refinement & Optimization 
+- Conduct user testing and gather feedback
+- Implement UI/UX refinements
+- Optimize performance (lazy loading, code splitting)
+- Ensure cross-browser compatibility
+- Perform accessibility compliance checks
+
+### Future Enhancements
+- PWA implementation for offline access
+- Native mobile app development
+- AI-powered personalized content recommendations
+- Integration with physical coaching centers
+- Live webinar platform integration
+
+This action plan provides a structured approach to transforming the UPSCMONK frontend into a stunning, user-centered experience that aligns with each user role's needs and promotes engagement with the platform's valuable features.
+
+---
+
 ## Backend Overview
 The backend is composed of multiple microservices, each responsible for a specific domain of the application. These services communicate via RESTful APIs and WebSockets.
 

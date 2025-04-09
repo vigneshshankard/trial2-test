@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "autoprefixer": "latest",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.6.3",
+    "lucide-react": "^0.487.0",
     "next": "latest",
     "postcss": "latest",
     "react": "latest",
