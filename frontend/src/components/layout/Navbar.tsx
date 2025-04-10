@@ -55,6 +55,8 @@ const Navbar: React.FC<NavbarProps> = ({ userRole = 'visitor' }) => {
       { label: 'Study Materials', href: '/study-materials' },
       { label: 'Current Affairs', href: '/current-affairs' },
       { label: 'Mock Tests', href: '/mock-tests' },
+      { label: 'Blog', href: '/blog' },
+      { label: 'Pricing', href: '/pricing' },
     ],
     free: [
       { label: 'Dashboard', href: '/dashboard' },
@@ -63,6 +65,8 @@ const Navbar: React.FC<NavbarProps> = ({ userRole = 'visitor' }) => {
       { label: 'Mock Tests', href: '/mock-tests' },
       { label: 'Study Planner', href: '/study-planner' },
       { label: 'Community', href: '/community' },
+      { label: 'Blog', href: '/blog' },
+      { label: 'Pricing', href: '/pricing' },
     ],
     premium: [
       { label: 'Dashboard', href: '/dashboard' },
@@ -71,6 +75,7 @@ const Navbar: React.FC<NavbarProps> = ({ userRole = 'visitor' }) => {
       { label: 'Mock Tests', href: '/mock-tests' },
       { label: 'Study Planner', href: '/study-planner' },
       { label: 'Community', href: '/community' },
+      { label: 'Blog', href: '/blog' },
       { label: 'Premium Content', href: '/premium' },
       { label: 'Mentorship', href: '/mentors' },
     ],
@@ -86,6 +91,11 @@ const Navbar: React.FC<NavbarProps> = ({ userRole = 'visitor' }) => {
 
   // User profile menu items
   const profileMenuItems = {
+    visitor: [
+      { label: 'My Profile', href: '/profile', icon: <User size={16} /> },
+      { label: 'Settings', href: '/settings', icon: <Settings size={16} /> },
+      { label: 'Logout', href: '/logout', icon: <LogOut size={16} /> },
+    ],
     free: [
       { label: 'My Profile', href: '/profile', icon: <User size={16} /> },
       { label: 'Notifications', href: '/notifications', icon: <Bell size={16} /> },
@@ -179,7 +189,7 @@ const Navbar: React.FC<NavbarProps> = ({ userRole = 'visitor' }) => {
                           <span>Premium Member</span>
                         </div>
                       )}
-                      {profileMenuItems[userRole === 'visitor' ? 'free' : userRole].map((item, index) => (
+                      {profileMenuItems[userRole].map((item, index) => (
                         <Link 
                           key={index} 
                           href={item.href}
@@ -249,7 +259,7 @@ const Navbar: React.FC<NavbarProps> = ({ userRole = 'visitor' }) => {
             ) : (
               <div className="mt-4 pt-4 border-t border-neutral-100">
                 <p className="font-medium text-sm text-neutral-500 mb-2">Account</p>
-                {profileMenuItems[userRole === 'visitor' ? 'free' : userRole].map((item, index) => (
+                {profileMenuItems[userRole].map((item, index) => (
                   <Link 
                     key={index} 
                     href={item.href}

@@ -2,5 +2,10 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js"
+  "/": "pages/index.js",
+  "/current-affairs": "pages/current-affairs.js",
+  "/study-materials": "pages/study-materials.js",
+  "/dashboard": "pages/dashboard.js",
+  "/auth/login": "pages/auth/login.js",
+  "/mock-tests": "pages/mock-tests.js"
 }

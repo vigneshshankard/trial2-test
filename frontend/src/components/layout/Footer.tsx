@@ -59,13 +59,13 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/study-planner" className="text-neutral-300 hover:text-white transition-colors">
-                  Study Planner
+                <Link href="/blog" className="text-neutral-300 hover:text-white transition-colors">
+                  Blog
                 </Link>
               </li>
               <li>
-                <Link href="/community" className="text-neutral-300 hover:text-white transition-colors">
-                  Community
+                <Link href="/pricing" className="text-neutral-300 hover:text-white transition-colors">
+                  Pricing
                 </Link>
               </li>
             </ul>
@@ -146,8 +146,8 @@ const Footer: React.FC = () => {
             <Link href="/privacy" className="text-neutral-400 hover:text-white transition-colors">
               Privacy
             </Link>
-            <Link href="/cookies" className="text-neutral-400 hover:text-white transition-colors">
-              Cookies
+            <Link href="/blog" className="text-neutral-400 hover:text-white transition-colors">
+              Blog
             </Link>
           </div>
         </div>

@@ -17,6 +17,7 @@
     "postcss": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-intersection-observer": "^9.16.0",
     "tailwindcss": "latest"
   },
   "devDependencies": {

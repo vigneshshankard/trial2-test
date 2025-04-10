@@ -11,7 +11,7 @@ const testimonials = [
     name: 'Priya Sharma',
     role: 'IAS Officer, AIR 45 (2024)',
     image: '/testimonials/priya-sharma.jpg', // Placeholder paths
-    quote: 'UPSCMONK's personalized study plan and daily current affairs updates were game-changers for my preparation. I could focus on studying instead of curating materials from different sources.',
+    quote: "UPSCMONK's personalized study plan and daily current affairs updates were game-changers for my preparation. I could focus on studying instead of curating materials from different sources.",
     rating: 5,
   },
   {
@@ -35,7 +35,7 @@ const testimonials = [
     name: 'Vikram Mehta',
     role: 'IRS Officer, AIR 156 (2023)',
     image: '/testimonials/vikram-mehta.jpg',
-    quote: 'After two unsuccessful attempts, switching to UPSCMONK helped me identify and work on my weak areas. The mentorship program gave me personalized guidance that books alone couldn't provide.',
+    quote: 'After two unsuccessful attempts, switching to UPSCMONK helped me identify and work on my weak areas. The mentorship program gave me personalized guidance that books alone couldn\'t provide.',
     rating: 5,
   },
   {
@@ -43,7 +43,7 @@ const testimonials = [
     name: 'Deepa Nair',
     role: 'IAS Officer, AIR 63 (2023)',
     image: '/testimonials/deepa-nair.jpg',
-    quote: 'The comprehensive nature of UPSCMONK's study material saved me countless hours of research. The current affairs section is exceptionally well-curated with UPSC-specific perspectives on each topic.',
+    quote: "The comprehensive nature of UPSCMONK's study material saved me countless hours of research. The current affairs section is exceptionally well-curated with UPSC-specific perspectives on each topic.",
     rating: 5,
   },
 ];

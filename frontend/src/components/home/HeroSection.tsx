@@ -1,10 +1,49 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { ArrowRight, CheckCircle, Users, Book, Award } from 'lucide-react';
 import Button from '../ui/Button';
 
 const HeroSection: React.FC = () => {
   const router = useRouter();
+
+  // Add useEffect to handle client-side document manipulation
+  useEffect(() => {
+    // Create the keyframes animation for the blob effect
+    const style = document.createElement('style');
+    style.textContent = `
+    @keyframes blob {
+      0% {
+        transform: scale(1);
+      }
+      33% {
+        transform: scale(1.1) translate(50px, -20px);
+      }
+      66% {
+        transform: scale(0.9) translate(-20px, 40px);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    .animate-blob {
+      animation: blob 12s infinite alternate;
+    }
+    .animation-delay-2000 {
+      animation-delay: -2s;
+    }
+    .animation-delay-4000 {
+      animation-delay: -4s;
+    }
+    `;
+    document.head.appendChild(style);
+
+    // Clean up function to remove the style when component unmounts
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []); // Empty dependency array ensures this runs once after initial render
 
   return (
     <section className="relative pt-24 pb-20 overflow-hidden bg-gradient-to-br from-primary-600 to-primary">
@@ -148,32 +187,3 @@ const HeroSection: React.FC = () => {
 };
 
 export default HeroSection;
-
-// Add keyframes animation for the blob effect
-const style = document.createElement('style');
-style.textContent = `
-@keyframes blob {
-  0% {
-    transform: scale(1);
-  }
-  33% {
-    transform: scale(1.1) translate(50px, -20px);
-  }
-  66% {
-    transform: scale(0.9) translate(-20px, 40px);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-.animate-blob {
-  animation: blob 12s infinite alternate;
-}
-.animation-delay-2000 {
-  animation-delay: -2s;
-}
-.animation-delay-4000 {
-  animation-delay: -4s;
-}
-`;
-document.head.appendChild(style);
